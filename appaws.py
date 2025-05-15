@@ -15,9 +15,9 @@ encoded_image = ( "iVBORw0KGgoAAAANSUhEUgAAB4AAAADVCAYAAAC2Ru0MAAAACXBIWXMAAC4jA
 
 
 USUARIOS = {
-    "mateusvalentim": "1234",
+    
     "tecnico": "senha123",
-    "isasilva": "4321"
+    
 }
 
 def tela_login():
