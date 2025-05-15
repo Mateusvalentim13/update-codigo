@@ -70,7 +70,7 @@ if not st.session_state["logado"]:
 # -------------------------------
 
 # Configuração da página
-st.set_page_config(page_title="Analisador .DAT", layout="wide")
+st.set_page_config(page_title="GeoWise - Health Check", layout="wide")
 
 # Exibir logo codificada em base64 (logotipo TecWise)
 encoded_image = (
@@ -94,7 +94,7 @@ abas = st.tabs(["📁 Arquivos", "🔋 Bateria", "🟥 Falhas & Patamar", "📤 
 
 # Configurações na barra lateral
 with abas[0]:
-    st.sidebar.title("ANÁLISE DE SAÚDE DOS INSTRUMENTOS - TecWise")
+    st.sidebar.title("GeoWise - Health Check")
     arquivos = st.sidebar.file_uploader("Selecione os arquivos .DAT", type=["dat"], accept_multiple_files=True)
     chart_type = st.sidebar.radio("Tipo de gráfico (bateria)", ["Linha"], index=0)
     hora_inicio = st.sidebar.time_input("Hora de início", value=time(0, 0))
