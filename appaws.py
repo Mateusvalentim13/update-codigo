@@ -65,9 +65,6 @@ if not st.session_state["logado"]:
     tela_login()
     st.stop()
 
-# -------------------------------
-# Resto do seu código original abaixo (como já existente)
-# -------------------------------
 
 # Configuração da página
 st.set_page_config(page_title="GeoWise - Health Check", layout="wide")
@@ -345,12 +342,12 @@ if not df_total.empty and 'timestamp' in df_total.columns:
             colunas_digit = [col for col in df_total.columns if col.lower().endswith(('_digit', '_hz'))]
 
             if colunas_digit:
-                # Selecionar colunas relevantes e garantir que sejam numéricas
+                
                 df_para_exibir = df_total[['timestamp'] + colunas_digit].copy() #
                 for col in colunas_digit:
                     df_para_exibir[col] = pd.to_numeric(df_para_exibir[col], errors='coerce') #
 
-                # Ordenar por timestamp
+                
                 df_para_exibir = df_para_exibir.sort_values(by='timestamp').reset_index(drop=True) #
 
                 if filtro_falhas == "Apenas falhas (-999)": #
@@ -359,32 +356,31 @@ if not df_total.empty and 'timestamp' in df_total.columns:
                     df_com_falhas = df_para_exibir[mask_falha_linha] #
 
                     if not df_com_falhas.empty:
-                        # 2. Identificar colunas que têm PELO MENOS UM -999 nessas linhas filtradas
+                        
                         colunas_com_falha_real = ['timestamp'] #
                         for col in colunas_digit:
-                            # Verificar se a coluna existe e se tem algum -999 após a filtragem de linha
+                            
                             if col in df_com_falhas.columns and df_com_falhas[col].eq(-999).any(): #
                                 colunas_com_falha_real.append(col) #
 
-                        # 3. Selecionar apenas essas colunas do DataFrame filtrado por linha
-                        #    E remover duplicatas de timestamp (mantém a primeira ocorrência)
+                        
                         df_display_final = df_com_falhas[colunas_com_falha_real].drop_duplicates(subset=['timestamp'], keep='first').reset_index(drop=True) #
                     else:
-                        # DataFrame vazio se nenhuma falha encontrada após filtrar linhas
+                        
                         df_display_final = pd.DataFrame(columns=['timestamp'])
 
-                else: # "Todas as linhas"
+                else: 
                     # Usar todas as linhas e colunas _digit, remover duplicatas de timestamp
                     df_display_final = df_para_exibir[['timestamp'] + colunas_digit].drop_duplicates(subset=['timestamp'], keep='first').reset_index(drop=True) #
 
-            # Exibir DataFrame resultante
+            
             if not df_display_final.empty:
                 # Pegar a página atual para exibição e preencher NaNs com string vazia
                 df_display_paginado = df_display_final.iloc[inicio_falha:fim_falha].fillna('') #
 
-                # Aplicar estilo
+                
                 try:
-                    # Formata números, tratando -999 como inteiro e outros floats com 3 casas decimais
+                    
                     estilo_falhas = df_display_paginado.style.format( #
                         lambda x: f"{x:.3f}".rstrip("0").rstrip(".") if isinstance(x, (float, np.number)) and pd.notna(x) and x != -999 else (int(x) if isinstance(x, (float, np.number)) and x == -999 else x)
                     ).applymap(destacar_falhas) # Aplica o destaque amarelo para -999 #
@@ -393,7 +389,7 @@ if not df_total.empty and 'timestamp' in df_total.columns:
                     st.error(f"Erro ao aplicar estilo: {e}")
                     st.dataframe(df_display_paginado, use_container_width=True) # Fallback para dataframe sem estilo
 
-                # Informações de paginação
+                
                 total_linhas_filtradas = len(df_display_final)
                 total_paginas = (total_linhas_filtradas // linhas_por_pagina_falha) + (1 if total_linhas_filtradas % linhas_por_pagina_falha > 0 else 0)
                 total_paginas = max(1, total_paginas) # Garante pelo menos 1 página
@@ -408,12 +404,12 @@ if not df_total.empty and 'timestamp' in df_total.columns:
             st.markdown(f"### 🟧 Mudança de Patamar (> {limiar_variacao * 100:.1f}%)") #
             colunas_valores = [col for col in df_patamar.columns if col not in ["timestamp", "arquivo_origem", "coluna"]] #
             df_patamar_filtrado = df_patamar.copy() #
-            # Substituir -999 por NaN antes de verificar NaNs para patamar
+            
             for col_val in colunas_valores:
                  if col_val in df_patamar_filtrado.columns:
                       df_patamar_filtrado[col_val] = pd.to_numeric(df_patamar_filtrado[col_val], errors='coerce').replace(-999, np.nan) #
 
-            df_patamar_filtrado = df_patamar_filtrado.dropna(subset=colunas_valores, how='all') # Remove linhas onde todas as colunas de valor são NaN (eram -999 ou não numéricas) #
+            df_patamar_filtrado = df_patamar_filtrado.dropna(subset=colunas_valores, how='all') 
 
             linhas_por_pagina = st.slider("Linhas por página (Mudança de Patamar)", 10, 200, 100, step=10, key="patamar_slider") #
             pagina_atual = st.number_input("Página (Mudança de Patamar)", min_value=1, value=1, step=1, key="patamar_page") #
@@ -428,7 +424,7 @@ if not df_total.empty and 'timestamp' in df_total.columns:
                  try:
                       estilo_patamar = df_patamar_paginado.style.format( #
                            lambda x: f"{x:.3f}".rstrip("0").rstrip(".") if isinstance(x, (float, np.number)) and pd.notna(x) else x
-                      ).applymap(destacar_mudanca) # Função destacar_mudanca precisa existir e funcionar #
+                      ).applymap(destacar_mudanca) 
                       st.dataframe(estilo_patamar, use_container_width=True) #
                  except Exception as e:
                       st.error(f"Erro ao aplicar estilo de patamar: {e}")
@@ -444,10 +440,10 @@ if not df_total.empty and 'timestamp' in df_total.columns:
 
 
             # Seção de Disponibilidade
-            st.markdown("### 📉 Disponibilidade (%)") #
+            st.markdown("### 📉 Disponibilidade (%)") 
             st.table(pd.DataFrame({ #
-                "Total Leituras": [len(df_total)], #
-                "Falhas (-999)": [total_lacunas], #
+                "Total Leituras": [len(df_total)], 
+                "Falhas (-999)": [total_lacunas], 
                 "Disponibilidade (%)": [f"{disponibilidade:.2f}%" if len(df_total) > 0 else "N/A"] # Evita divisão por zero #
             }))
 
@@ -478,7 +474,7 @@ if not df_total.empty and 'timestamp' in df_total.columns:
             
     #Aba "Data e Hora"
     
-with abas[5]:  # índice 5 corresponde à 6ª aba ("⏰ Data e Hora")
+with abas[5]:  
     st.subheader("⏰ Verificação de Consistência Temporal")
     df_erros_temporais = detectar_erros_temporais(df_total)
 
@@ -490,7 +486,7 @@ with abas[5]:  # índice 5 corresponde à 6ª aba ("⏰ Data e Hora")
 
 
 # Aba "Dados Repetidos"
-with abas[4]:  # índice 4 corresponde à 5ª aba (🔁 Dados Repetidos)
+with abas[4]:  
     st.subheader("🔁 Leituras Repetidas")
 
     if not df_total.empty:
@@ -502,21 +498,21 @@ with abas[4]:  # índice 4 corresponde à 5ª aba (🔁 Dados Repetidos)
         ]
         colunas_validas = ['timestamp'] + colunas_leitura
 
-        # Criar cópia com os campos relevantes
+        
         df_check = df_total[colunas_validas].copy()
         df_check[colunas_leitura] = df_check[colunas_leitura].apply(pd.to_numeric, errors='coerce').round(4)
 
-        # ❌ Remover qualquer linha que contenha -999
+        
         df_check = df_check[~df_check[colunas_leitura].eq(-999).any(axis=1)]
 
-        # Agrupar
+        
         repeticoes = df_check.groupby(colunas_validas).size().reset_index(name='Ocorrências')
         repetidos = repeticoes[repeticoes['Ocorrências'] >= 3]
 
         if not repetidos.empty:
             st.success(f"🔁 {len(repetidos)} conjunto(s) de leitura repetida encontrado(s).")
             
-            # ✅ Aqui você insere o trecho desejado:
+           
             colunas_para_mostrar = [col for col in repetidos.columns if col != 'Ocorrências']
             st.dataframe(repetidos[colunas_para_mostrar + ['Ocorrências']], use_container_width=True)
 
