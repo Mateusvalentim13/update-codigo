@@ -472,17 +472,22 @@ if not df_total.empty and 'timestamp' in df_total.columns:
                 mime="text/csv"
             )
             
-    #Aba "Data e Hora"
-    
+        
+# Aba "Data e Hora"
 with abas[5]:  
     st.subheader("⏰ Verificação de Consistência Temporal")
-    df_erros_temporais = detectar_erros_temporais(df_total)
 
-    if not df_erros_temporais.empty:
-        st.warning("⚠️ Foram encontrados registros com timestamps fora de ordem cronológica.")
-        st.dataframe(df_erros_temporais, use_container_width=True)
+    if not df_total.empty and 'timestamp' in df_total.columns and 'arquivo_origem' in df_total.columns:
+        df_erros_temporais = detectar_erros_temporais(df_total)
+
+        if not df_erros_temporais.empty:
+            st.warning("⚠️ Foram encontrados registros com timestamps fora de ordem cronológica.")
+            st.dataframe(df_erros_temporais, use_container_width=True)
+        else:
+            st.success("✅ Todos os timestamps estão em ordem cronológica esperada.")
     else:
-        st.success("✅ Todos os timestamps estão em ordem cronológica esperada.")
+        st.info("🔍 Carregue os arquivos para realizar a verificação de consistência temporal.")
+
 
 
 # Aba "Dados Repetidos"
@@ -490,7 +495,7 @@ with abas[4]:
     st.subheader("🔁 Leituras Repetidas")
 
     if not df_total.empty:
-        # Selecionar colunas numéricas válidas
+       
         colunas_leitura = [
             col for col in df_total.columns
             if col not in ['timestamp', 'arquivo_origem']
@@ -520,4 +525,8 @@ with abas[4]:
             st.info("✅ Nenhuma leitura duplicada.")
     else:
         st.info("Nenhum dado carregado para análise.")
+
+
+
+
 
