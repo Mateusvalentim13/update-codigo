@@ -87,7 +87,7 @@ if 'ultima_contagem_falhas' not in st.session_state:
     st.session_state['ultima_contagem_falhas'] = 0
 
 # Navegação por abas
-abas = st.tabs(["📁 Arquivos", "🔋 Bateria", "🟥 Falhas & Patamar", "📤 Exportação", "🔁Dados Repetidos", "⏰Data e Hora", "📶 Nível de sinal"])
+abas = st.tabs(["📁 Arquivos", "🟥 Falhas de Patamar", "🔋Status das Baterias", "🔁Dados Congelados", "⏰Continuidade Temporal", "📤 Exportação"])
 
 # Configurações na barra lateral
 with abas[0]:
@@ -132,6 +132,7 @@ def detectar_erros_temporais(df_total):
                 })
 
     return pd.DataFrame(erros)
+
 
 
         
@@ -238,7 +239,7 @@ if not df_total.empty and 'timestamp' in df_total.columns:
     # Aba "Bateria"
     campos_bateria = [c for c in df_total.columns if 'battery' in c.lower()]
     if campos_bateria:
-        with abas[1]:
+        with abas[2]:
             st.subheader("🔋 Verificação de Bateria")
             resumo_bateria = []
             for campo in campos_bateria:
@@ -274,14 +275,14 @@ if not df_total.empty and 'timestamp' in df_total.columns:
                         st.plotly_chart(fig, use_container_width=True)
 
         # Aba "Falhas & Patamar"
-        col_digit_cols = [col for col in df_total.columns if col.lower().endswith(('_digit', '_hz'))]
+        col_digit_cols = [col for col in df_total.columns if col.lower().endswith(('_digit', '_hz', '_mm', '_kpa'))]
         for col in col_digit_cols:
             df_total[col] = pd.to_numeric(df_total[col], errors='coerce')
             falhas_mask = df_total[col] == -999
 
 
     if 'col_digit_cols' in locals() and col_digit_cols:
-        with abas[2]:
+        with abas[1]:
             # Depuração para verificar valores únicos
             with st.expander("🔍 Depuração: Valores Únicos nas Colunas"):
                 for col in col_digit_cols:
@@ -339,7 +340,7 @@ if not df_total.empty and 'timestamp' in df_total.columns:
 
             # Preparar DataFrame para exibição de falhas
             df_display_final = pd.DataFrame()
-            colunas_digit = [col for col in df_total.columns if col.lower().endswith(('_digit', '_hz'))]
+            colunas_digit = [col for col in df_total.columns if col.lower().endswith(('_digit', '_hz', '_mm', '_kpa'))]
 
             if colunas_digit:
                 
@@ -387,12 +388,12 @@ if not df_total.empty and 'timestamp' in df_total.columns:
                     st.dataframe(estilo_falhas, use_container_width=True) #
                 except Exception as e:
                     st.error(f"Erro ao aplicar estilo: {e}")
-                    st.dataframe(df_display_paginado, use_container_width=True) # Fallback para dataframe sem estilo
+                    st.dataframe(df_display_paginado, use_container_width=True) 
 
                 
                 total_linhas_filtradas = len(df_display_final)
                 total_paginas = (total_linhas_filtradas // linhas_por_pagina_falha) + (1 if total_linhas_filtradas % linhas_por_pagina_falha > 0 else 0)
-                total_paginas = max(1, total_paginas) # Garante pelo menos 1 página
+                total_paginas = max(1, total_paginas) 
                 st.caption(f"Página {min(pagina_atual_falha, total_paginas)} de {total_paginas} ({total_linhas_filtradas} linhas no total)")
 
             elif filtro_falhas == "Apenas falhas (-999)": #
@@ -403,7 +404,7 @@ if not df_total.empty and 'timestamp' in df_total.columns:
             # Seção de Mudança de Patamar
             st.markdown(f"### 🟧 Mudança de Patamar (> {limiar_variacao * 100:.1f}%)") #
             colunas_valores = [col for col in df_patamar.columns if col not in ["timestamp", "arquivo_origem", "coluna"]] #
-            df_patamar_filtrado = df_patamar.copy() #
+            df_patamar_filtrado = df_patamar.copy() 
             
             for col_val in colunas_valores:
                  if col_val in df_patamar_filtrado.columns:
@@ -415,7 +416,7 @@ if not df_total.empty and 'timestamp' in df_total.columns:
             pagina_atual = st.number_input("Página (Mudança de Patamar)", min_value=1, value=1, step=1, key="patamar_page") #
             inicio = (pagina_atual - 1) * linhas_por_pagina
             fim = inicio + linhas_por_pagina
-            # Remove colunas auxiliares e duplicatas de timestamp antes de exibir
+            
             df_patamar_display = df_patamar_filtrado.drop(columns=["arquivo_origem", "coluna"], errors='ignore').copy() #
             df_patamar_display = df_patamar_display.drop_duplicates(subset=['timestamp'], keep='first').reset_index(drop=True) #
 
@@ -459,7 +460,7 @@ if not df_total.empty and 'timestamp' in df_total.columns:
                 st.dataframe(df_indisp.style.format({"Disponibilidade (%)": "{:.2f}%"}), use_container_width=True) #
 
     # Aba "Exportação"
-    with abas[3]:
+    with abas[5]:
         st.subheader("📄 Dados e Exportação")
         st.dataframe(df_total, use_container_width=True)
         exportar_csv = st.button("Exportar Dados")
@@ -474,57 +475,21 @@ if not df_total.empty and 'timestamp' in df_total.columns:
             
         
 # Aba "Data e Hora"
-with abas[5]:  
-    st.subheader("⏰ Verificação de Consistência Temporal")
-
-    if not df_total.empty and 'timestamp' in df_total.columns and 'arquivo_origem' in df_total.columns:
-        df_erros_temporais = detectar_erros_temporais(df_total)
-
-        if not df_erros_temporais.empty:
-            st.warning("⚠️ Foram encontrados registros com timestamps fora de ordem cronológica.")
-            st.dataframe(df_erros_temporais, use_container_width=True)
-        else:
-            st.success("✅ Todos os timestamps estão em ordem cronológica esperada.")
-    else:
-        st.info("🔍 Carregue os arquivos para realizar a verificação de consistência temporal.")
-
-
-
-# Aba "Dados Repetidos"
 with abas[4]:  
-    st.subheader("🔁 Leituras Repetidas")
-
-    if not df_total.empty:
-       
-        colunas_leitura = [
-            col for col in df_total.columns
-            if col not in ['timestamp', 'arquivo_origem']
-            and pd.api.types.is_numeric_dtype(df_total[col])
-        ]
-        colunas_validas = ['timestamp'] + colunas_leitura
-
-        
-        df_check = df_total[colunas_validas].copy()
-        df_check[colunas_leitura] = df_check[colunas_leitura].apply(pd.to_numeric, errors='coerce').round(4)
-
-        
-        df_check = df_check[~df_check[colunas_leitura].eq(-999).any(axis=1)]
-
-        
-        repeticoes = df_check.groupby(colunas_validas).size().reset_index(name='Ocorrências')
-        repetidos = repeticoes[repeticoes['Ocorrências'] >= 3]
-
-        if not repetidos.empty:
-            st.success(f"🔁 {len(repetidos)} conjunto(s) de leitura repetida encontrado(s).")
-            
-           
-            colunas_para_mostrar = [col for col in repetidos.columns if col != 'Ocorrências']
-            st.dataframe(repetidos[colunas_para_mostrar + ['Ocorrências']], use_container_width=True)
-
-        else:
-            st.info("✅ Nenhuma leitura duplicada.")
+    st.subheader("⏰ Verificação de Continuidade Temporal")
+    erros_temporais = detectar_erros_temporais(df_total)
+    if erros_temporais.empty:
+        st.success("✅ Nenhum problema de continuidade temporal encontrado.")
     else:
-        st.info("Nenhum dado carregado para análise.")
+        st.warning("⚠️ Problemas de continuidade temporal detectados:")
+        st.dataframe(erros_temporais, use_container_width=True)
+
+
+
+
+
+
+
 
 
 
